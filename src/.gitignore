@@ -1,0 +1,12 @@
+src/node_modules/*
+src/dist/*
+src/clientApp/typing/*
+.env
+src/mariaDB/*
+*__pycache__*
+*.pyc
+*.wpu
+*.wpr
+src/clientApp/js/kernel\.config\.js
+
+src/clientApp/test\.html

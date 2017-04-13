@@ -1,0 +1,14 @@
+version: '2'
+services:
+    web-build:
+        build: 
+            context: .
+            dockerfile: BuildDockerFile
+        image: "webbuild:base"
+        tty: true
+        working_dir: /app
+        ports:
+            - "8080:8080"
+        volumes:
+            -  "./src:/app"
+        command: sh /app/build.sh
