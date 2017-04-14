@@ -50,11 +50,12 @@ header-value        = *<any OCTET except LF or ":">
 
 namespace STOMP {
 
+
     const BYTE_NULL = 0x00;
     const BYTE_LINE_FEED = 0x0A;
 
+    //client
     const COMMAND_CONNECT = "CONNECT";
-    const COMMAND_CONNECTED = "CONNECTED";
     const COMMAND_SEND = "SEND";
     const COMMAND_STOMP = "STOMP";
     const COMMAND_SUBSCRIBE = "SUBSCRIBE";
@@ -65,6 +66,8 @@ namespace STOMP {
     const COMMAND_BEGIN = "BEGIN";
     const COMMAND_COMMIT = "COMMIT";
 
+    //Server
+    const COMMAND_CONNECTED = "CONNECTED";
     const COMMAND_MESSAGE = "MESSAGE";
     const COMMAND_RECEIPT = "RECEIPT";
     const COMMAND_ERROR = "ERROR";
@@ -73,13 +76,10 @@ namespace STOMP {
     const HEADER_HOST = "host"; 
     const HEADER_LOGIN = "login";
     const HEADER_PASSCODE = "passcode";
+    const HEADER_CONTENT_LENGTH = "content-length";
     
-    class Client {
-        constructor (){
+    const HEADER_SEPERATOR = ":";
 
-            
-        }  
-    }
     /*
 
     <START of frame (not actually included)>
@@ -102,12 +102,12 @@ namespace STOMP {
     */
 
     interface headerContainer {
-        headers:[{[key:string]:string}]
+        headers:{[key:string]:string[]}
     }
 
     interface frame extends headerContainer {
         command: string
-        headers:[{[key:string]:string}]/*The intermediate server MAY 'update' header values by either prepending headers to the message or modifying a header in-place in the message.*/
+        headers:{[key:string]:string[]}/*The intermediate server MAY 'update' header values by either prepending headers to the message or modifying a header in-place in the message.*/
     }
 
     //Only the SEND, MESSAGE, and ERROR frames can have a body. All other frames MUST NOT have a body.
@@ -130,24 +130,6 @@ namespace STOMP {
         passcode: string;
         host: string;
     }
-    class Stomp1Dot1HeaderSetter implements headerSetter{
-        _login: string;
-        _passcode: string;
-        _host: string;
-        constructor(options: stompHeader1Dot1HeaderOptions){
-            this._host = options.host;
-            this._login = options.login;
-            this._passcode = options.passcode;
-        }
-        setHeaders(hc: headerContainer){
-            hc.headers.push({HEADER_ACCEPT_VERSION:"1.1"});
-            hc.headers.push({HEADER_HOST:this._host});
-            hc.headers.push({HEADER_LOGIN:this._login})
-            hc.headers.push({HEADER_PASSCODE:this._passcode})
-        }
-    }
-    /* Client Frames */
-
     interface receiptOption {
         receipt: string;
     }
@@ -170,29 +152,6 @@ namespace STOMP {
         content_length: number;
         content: any;
     }
-
-    class SendFrame  implements frame, bodyContainer  {
-        command = COMMAND_SEND;
-        headers:[{[key:string]:string}] = <[{[key:string]:string}]>[];    
-        body: any;
-
-        /* 
-        Header content-type
-
-        The SEND, MESSAGE and ERROR frames SHOULD include a content-type header if a frame body is present. 
-        It SHOULD be set to a mime type which describes the format of the body to help the receiver of the frame interpret it's contents. 
-        If the content-type header is not set, the receiver SHOULD consider the body to be a binary blob.
-
-        The implied text encoding for mime types starting with text/ is UTF-8. If you are using a text based mime type with a different 
-        encoding then you SHOULD append ;charset=<encoding> to the mime type. For example, text/html;charset=utf-16 SHOULD be used if your
-        sending an html body in UTF-16 encoding. The ;charset=<encoding> SHOULD also get appended to any non text/ mime types which can 
-        be interpreted as text. A good example of this would be a UTF-8 encoded XML. It's content-type SHOULD get set to application/xml;charset=utf-8
-
-        All STOMP clients and servers MUST support UTF-8 encoding and decoding. Therefore, for maximum interoperability in a heterogeneous 
-        computing environment, it is RECOMMENDED that text based content be encoded with UTF-8.
-        */
-    }
-
     interface heartbeat_options {
         outgoing: number;
         incomming: number;
@@ -200,47 +159,8 @@ namespace STOMP {
     interface connectFrameOptions {
         heartbeat_options?: heartbeat_options;
     }
-    class ConnectFrame implements frame {
-        command = COMMAND_CONNECT
-        headers:[{[key:string]:string}] = <[{[key:string]:string}]>[];    
-        constructor(options: connectFrameOptions){
-            //TODO:
-        }
-        // The server SHOULD respond back with an ERROR frame listing why the connection was rejected and then close the connection.
-        // STOMP servers MUST support clients which rapidly connect and disconnect.
-        // This means that a client may not receive the ERROR frame before the socket is reset.
-    }
-
     interface disconnectFrameOptions extends receiptOption {
     }
-    class CisconnectFrame implements frame {
-        command = COMMAND_CONNECT
-        headers:[{[key:string]:string}] = <[{[key:string]:string}]>[];    
-        constructor(options: disconnectFrameOptions){
-            //TODO:
-        }
-        /* last message sent */
-        /* SHOULD wait for receiptFRAME 
-
-    Example:
-
-    RECEIPT
-    receipt-id:77
-    ^@
-
-        */
-
-    }
-
-    class StompFrame implements frame {
-        command = COMMAND_STOMP
-        headers:[{[key:string]:string}] = <[{[key:string]:string}]>[];    
-        // The server SHOULD respond back with an ERROR frame listing why the connection was rejected and then close the connection.
-        // STOMP servers MUST support clients which rapidly connect and disconnect.
-        // This means that a client may not receive the ERROR frame before the socket is reset.
-    }
-
-
     interface subscribeFrameOptions extends destinationOption, idOption, receiptOption {
         ack: string; /* auto, client, client-individual */
         /*
@@ -264,35 +184,209 @@ namespace STOMP {
         */ // NO LOST DATA
 
     }
-
-    class SubscribeFrame implements frame {
-        command = COMMAND_SUBSCRIBE
-        headers:[{[key:string]:string}] = <[{[key:string]:string}]>[];    
-        constructor(options: subscribeFrameOptions){
-            //TODO:
-        }
-    }
-
     interface unsubscribeFrameOptions extends idOption, receiptOption {
-        
     }
-
-    class UnsubscribeFrame implements frame {
-        command = COMMAND_UNSUBSCRIBE
-        headers:[{[key:string]:string}] = <[{[key:string]:string}]>[];    
-        constructor(options: unsubscribeFrameOptions){
-            //TODO:
-        }
-    }
-
     interface ackFrameOptions extends maybeTransactionOption, receiptOption {
         message_id: string;
         subscription: string;
     }
 
+
+    function sizeOfUTF8(s:string){
+        // Matches only the 10.. bytes that are non-initial characters in a multi-byte sequence.
+        var m = encodeURIComponent(s).match(/%[89ABab]/g);
+        return s.length + (m ? m.length : 0);
+    }
+
+    function parseBody(data: string, start: number, content_length?: number):string{
+        var result = "";
+        if(content_length){
+            result = ('' + data).substring(start, start + content_length)
+        }
+        else{
+           // Length is unknown read until end or seperator 
+           var chr = null
+            for(var i = start; i<data.length; i+=1){
+                chr = data.charAt(i)
+                if(chr == ""+BYTE_NULL){
+                    break;
+                }
+                result += chr
+            }
+        }
+        return result;       
+    }
+    function validateHeaders(command: string, headers:{[key:string]:string[]}){
+        //TODO:
+        return true;
+    }
+    function parseHeaderLines(headerLines: string[]){
+           var result:{[key:string]:string[]}={};
+           for(var line in headerLines){
+               var index = line.indexOf(HEADER_SEPERATOR);
+               if(!(line.substring(0,index).trim() in result)){
+                result[line.substring(0,index).trim()] = []
+               }
+               result[line.substring(0,index).trim()].push(line.substring(index+1).trim()); 
+           }
+           return result;
+    }
+
+    function frameFactory(command:string, headers:{[key:string]:string[]}, body?:string):frame{
+        var result: frame;
+        switch(command){
+            case COMMAND_CONNECTED:
+                    result = new ConnectedFrame();
+                break;
+            case COMMAND_ERROR:
+                result = new ErrorFrame();
+                break;
+            case COMMAND_RECEIPT:
+                result = new ReceiptFrame(); 
+                break;
+            case COMMAND_MESSAGE:
+                result = new MessageFrame();
+                break;
+        }
+        result.command = command;
+        result.headers =  headers;
+        validateHeaders(command,headers);
+        return result;
+    }
+    function parseSocketMessage(data:string){
+       var seperator = data.search(""+BYTE_LINE_FEED+BYTE_LINE_FEED),
+           headerRecords = data.substring(0, seperator).split(""+BYTE_LINE_FEED),
+           command = headerRecords.shift(),
+           headers = parseHeaderLines(headerRecords);
+          var content_length;
+          if(HEADER_CONTENT_LENGTH in headers){
+              content_length = parseInt(headers[HEADER_CONTENT_LENGTH][0],10);
+          }
+          return frameFactory(command, headers, parseBody(data, seperator+2, content_length));
+    }
+    function parseSocketMessages(data:string){
+        var pieces:string[] = data.split(""+BYTE_NULL+BYTE_LINE_FEED),
+        result: frame[] = [];
+        for(var i = 0; i<pieces.length; i+=1){
+            if(data.length>0)
+            result.push(parseSocketMessage(pieces[i]));
+        }
+        return result;
+    }
+
+    class Client {
+        constructor (){
+
+            
+        }  
+    }
+
+    class Stomp1Dot1HeaderSetter implements headerSetter{
+        _login: string;
+        _passcode: string;
+        _host: string;
+        constructor(options: stompHeader1Dot1HeaderOptions){
+            this._host = options.host;
+            this._login = options.login;
+            this._passcode = options.passcode;
+        }
+        setHeaders(hc: headerContainer){
+            hc.headers[HEADER_ACCEPT_VERSION]=["1.1"];
+            hc.headers[HEADER_HOST]=[this._host];
+            hc.headers[HEADER_LOGIN]=[this._login];
+            hc.headers[HEADER_PASSCODE]=[this._passcode];
+        }
+    }
+    /* Client Frames */
+
+    class UnsupportedFrame implements frame {
+        command: string;
+        headers:{[key:string]:string[]} = <{[key:string]:string[]}>{};    
+    }
+
+    class SendFrame  implements frame, bodyContainer  {
+        command = COMMAND_SEND;
+        headers:{[key:string]:string[]} = <{[key:string]:string[]}>{};    
+        body: any;
+
+        /* 
+        Header content-type
+
+        The SEND, MESSAGE and ERROR frames SHOULD include a content-type header if a frame body is present. 
+        It SHOULD be set to a mime type which describes the format of the body to help the receiver of the frame interpret it's contents. 
+        If the content-type header is not set, the receiver SHOULD consider the body to be a binary blob.
+
+        The implied text encoding for mime types starting with text/ is UTF-8. If you are using a text based mime type with a different 
+        encoding then you SHOULD append ;charset=<encoding> to the mime type. For example, text/html;charset=utf-16 SHOULD be used if your
+        sending an html body in UTF-16 encoding. The ;charset=<encoding> SHOULD also get appended to any non text/ mime types which can 
+        be interpreted as text. A good example of this would be a UTF-8 encoded XML. It's content-type SHOULD get set to application/xml;charset=utf-8
+
+        All STOMP clients and servers MUST support UTF-8 encoding and decoding. Therefore, for maximum interoperability in a heterogeneous 
+        computing environment, it is RECOMMENDED that text based content be encoded with UTF-8.
+        */
+    }
+
+    class ConnectFrame implements frame {
+        command = COMMAND_CONNECT
+        headers:{[key:string]:string[]} = <{[key:string]:string[]}>{};    
+        constructor(options: connectFrameOptions){
+            //TODO:
+        }
+        // The server SHOULD respond back with an ERROR frame listing why the connection was rejected and then close the connection.
+        // STOMP servers MUST support clients which rapidly connect and disconnect.
+        // This means that a client may not receive the ERROR frame before the socket is reset.
+    }
+
+    class DisconnectFrame implements frame {
+        command = COMMAND_CONNECT
+        headers:{[key:string]:string[]} = <{[key:string]:string[]}>{};    
+        constructor(options: disconnectFrameOptions){
+            //TODO:
+        }
+        /* last message sent */
+        /* SHOULD wait for receiptFRAME 
+
+    Example:
+
+    RECEIPT
+    receipt-id:77
+    ^@
+
+        */
+
+    }
+
+    class StompFrame implements frame {
+        command = COMMAND_STOMP
+        headers:{[key:string]:string[]} = <{[key:string]:string[]}>{};    
+        // The server SHOULD respond back with an ERROR frame listing why the connection was rejected and then close the connection.
+        // STOMP servers MUST support clients which rapidly connect and disconnect.
+        // This means that a client may not receive the ERROR frame before the socket is reset.
+    }
+
+
+
+    class SubscribeFrame implements frame {
+        command = COMMAND_SUBSCRIBE
+        headers:{[key:string]:string[]} = <{[key:string]:string[]}>{};    
+        constructor(options: subscribeFrameOptions){
+            //TODO:
+        }
+    }
+
+
+    class UnsubscribeFrame implements frame {
+        command = COMMAND_UNSUBSCRIBE
+        headers:{[key:string]:string[]} = <{[key:string]:string[]}>{};    
+        constructor(options: unsubscribeFrameOptions){
+            //TODO:
+        }
+    }
+
+
     class AckFrame implements frame {
         command = COMMAND_ACK
-        headers:[{[key:string]:string}] = <[{[key:string]:string}]>[];    
+        headers:{[key:string]:string[]} = <{[key:string]:string[]}>{};    
         constructor(options: ackFrameOptions){
             //TODO:
         }
@@ -300,7 +394,7 @@ namespace STOMP {
 
     class NackFrame implements frame {
         command = COMMAND_NACK
-        headers:[{[key:string]:string}] = <[{[key:string]:string}]>[];    
+        headers:{[key:string]:string[]} = <{[key:string]:string[]}>{};    
         constructor(options: ackFrameOptions){
             //TODO:
         }
@@ -308,7 +402,7 @@ namespace STOMP {
 
     class BeginFrame implements frame {
         command = COMMAND_BEGIN
-        headers:[{[key:string]:string}] = <[{[key:string]:string}]>[];    
+        headers:{[key:string]:string[]} = <{[key:string]:string[]}>{};    
         constructor(options: transactionOption & receiptOption){
             //TODO:
         }
@@ -316,7 +410,7 @@ namespace STOMP {
 
     class CommitFrame implements frame {
         command = COMMAND_COMMIT
-        headers:[{[key:string]:string}] = <[{[key:string]:string}]>[];    
+        headers:{[key:string]:string[]} = <{[key:string]:string[]}>{};    
         constructor(options: transactionOption & receiptOption){
             //TODO:
         }
@@ -324,7 +418,7 @@ namespace STOMP {
 
     class AbortFrame implements frame {
         command = COMMAND_ABORT
-        headers:[{[key:string]:string}] = <[{[key:string]:string}]>[];    
+        headers:{[key:string]:string[]} = <{[key:string]:string[]}>{};    
         constructor(options: transactionOption & receiptOption){
             //TODO:
         }
@@ -334,7 +428,7 @@ namespace STOMP {
     /* Server Frames */
     class ConnectedFrame implements frame {
         command = COMMAND_CONNECTED;
-        headers:[{[key:string]:string}] = <[{[key:string]:string}]>[];    
+        headers:{[key:string]:string[]} = <{[key:string]:string[]}>{};    
     /*
 
 
@@ -356,7 +450,7 @@ namespace STOMP {
 
     class MessageFrame implements frame {
         command = COMMAND_MESSAGE;
-        headers:[{[key:string]:string}] = <[{[key:string]:string}]>[];    
+        headers:{[key:string]:string[]} = <{[key:string]:string[]}>{};    
         /* MESSAGE frames are used to convey messages from subscriptions to the client. 
         The MESSAGE frame will include a destination header indicating the destination 
         the message was sent to. It will also contain a message-id header with a unique 
@@ -383,7 +477,7 @@ namespace STOMP {
 
     class ErrorFrame implements frame {
         command = COMMAND_ERROR;
-        headers:[{[key:string]:string}] = <[{[key:string]:string}]>[];    
+        headers:{[key:string]:string[]} = <{[key:string]:string[]}>{};    
         /*The server MAY send ERROR frames if something goes wrong. The error frame SHOULD contain a message header 
         with a short description of the error, and the body MAY contain more detailed information (or MAY be empty).
         If the error is related to specific frame sent from the client, the server SHOULD add additional headers to 
@@ -397,7 +491,7 @@ namespace STOMP {
 
     class ReceiptFrame implements frame {
         command = COMMAND_RECEIPT;
-        headers:[{[key:string]:string}] = <[{[key:string]:string}]>[];    
+        headers:{[key:string]:string[]} = <{[key:string]:string[]}>{};    
         /*A RECEIPT frame is sent from the server to the client once a server has successfully 
         processed a client frame that requests a receipt. A RECEIPT frame will include the header
         receipt-id, where the value is the value of the receipt header in the frame which this is a receipt for.*/
@@ -406,5 +500,10 @@ namespace STOMP {
 
 
 
-}
+/*
+TODO: Timing library instead of unreliable javascript timers
 
+*/
+
+    
+}
