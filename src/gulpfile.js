@@ -63,11 +63,5 @@ const mocha = require('gulp-mocha');
             });
         });
 
-        gulp.task("develop",function(){
-           gulp.start("clean:dist");
-           gulp.start("typescript");
-           gulp.start("js");
-           gulp.start("watch");
-        });
-
+        gulp.task("develop", ['clean:dist', 'typescript', 'js', 'watch']);
 }());
