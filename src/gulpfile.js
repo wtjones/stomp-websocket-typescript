@@ -21,6 +21,7 @@ const mocha = require('gulp-mocha');
         self.source.path = 'clientApp/';
         self.source.javascript.path = self.source.path + 'js/**/*.js';
         self.source.all.typescript = self.source.path + 'ts/**/*.ts';
+        self.source.test = {typescript: 'test/**/*.ts'};
 
         self.destination = {};
         self.destination.html = {};
@@ -56,6 +57,9 @@ const mocha = require('gulp-mocha');
         });
         gulp.task("watch", function(){
             gulp.watch(self.source.all.typescript, function(){
+                gulp.start("typescript");
+            });
+            gulp.watch(self.source.test.typescript, function(){
                 gulp.start("typescript");
             });
             gulp.watch(self.source.javascript.path, function(){

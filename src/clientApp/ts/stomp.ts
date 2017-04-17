@@ -275,10 +275,20 @@ namespace STOMP {
     }
 
     export class Client {
-        constructor (){
-
-            
-        }  
+        constructor (private _url: string){
+            this._socket = new WebSocket(_url)
+            this._socket.onerror = (event: WebSocketEventMap) => {
+                console.log(`error: ${JSON.stringify(event.data)}`)
+            }
+            this._socket.onmessage = (event: WebSocketEventMap) => {
+                console.log(`message: ${JSON.stringify(event.data)}`)
+            }
+            this._socket.onopen = (event: WebSocketEventMap) => {
+                console.log(`open: ${JSON.stringify(event.data)}`)
+                this._socket.send('hello')
+            }
+        }
+        _socket: WebSocket;
     }
 
     class Stomp1Dot1HeaderSetter implements headerSetter{

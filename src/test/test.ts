@@ -4,11 +4,13 @@
 describe('STOMP Client', function() {
   describe('#ctor()', function() {
     it('should create the object', function() {
-      let sut = new STOMP.Client();
+      let sut = new STOMP.Client('ws://127.0.0.1:61613');
 
       if (typeof sut === undefined) {
         throw new Error("client is null");
       }
+
+      
     });
   });
 });
