@@ -4,6 +4,7 @@ var tsProject = ts.createProject('tsconfig.json',{noImplicitAny: true});
 const del = require('del');
 const minify = require('gulp-minify');
 const chmod = require('gulp-chmod');
+const mocha = require('gulp-mocha');
 (function(){
         var self = this;
         
@@ -49,6 +50,10 @@ const chmod = require('gulp-chmod');
                 .pipe(gulp.dest(self.destination.javascript.path));
         });
 
+        gulp.task('test', ['clean:dist', 'typescript'], function() {
+            gulp.src(self.destination.javascript.path + '/test/test.js', {read: false})
+                .pipe(mocha({reporter: 'nyan'}))
+        });
         gulp.task("watch", function(){
             gulp.watch(self.source.all.typescript, function(){
                 gulp.start("typescript");

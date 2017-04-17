@@ -4,12 +4,16 @@
         "noImplicitAny": true,
         "removeComments": true,
         "preserveConstEnums": true,
-        "outFile": "stomp.js",
+        "outDir": "dist",
         "sourceMap": true,
-        "inlineSources": true
+        "inlineSources": true,
+        "typeRoots": [
+            "node_modules"
+        ]
     },
     "include": [
-        "clientApp/ts/**/*"
+        "clientApp/ts/**/*",
+        "test/**/*"
     ],
     "exclude": [
         "node_modules",
