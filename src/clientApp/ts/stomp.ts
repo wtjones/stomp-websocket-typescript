@@ -274,7 +274,7 @@ namespace STOMP {
         return result;
     }
 
-    class Client {
+    export class Client {
         constructor (){
 
             
