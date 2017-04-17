@@ -1,0 +1,4 @@
+FROM rabbitmq:3.6.0-management
+MAINTAINER Carl Burks <crb02005@gmail.com>
+
+RUN rabbitmq-plugins enable rabbitmq_stomp --offline

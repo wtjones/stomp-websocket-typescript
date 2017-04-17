@@ -12,3 +12,24 @@ services:
         volumes:
             -  "./src:/app"
         command: sh /app/build.sh
+    rabbitmq:
+        build:
+            context: .
+            dockerfile: RabbitDockerFile
+        image: webbuild:rabbitmq-3-management
+        hostname: someRabbit
+        restart: always
+        tty: true
+        volumes:
+            - /var/lib/rabbitmq
+        env_file: .env
+        ports:
+            - "5672:5672"
+            - "15672:15672"
+            - "61613:61613"
+        expose:
+            - "5672"
+            - "15672"
+            - "61613"
+        logging:
+            driver: "json-file"
